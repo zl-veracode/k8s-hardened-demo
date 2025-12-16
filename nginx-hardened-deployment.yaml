@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-hardened
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      # POD-LEVEL SECURITY CONTEXT
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101        # Default UID for nginx-unprivileged
+        runAsGroup: 101       # Default GID for nginx-unprivileged
+        fsGroup: 101          # Ensure mounted volumes are readable by this GID
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:stable-alpine
+          ports:
+            - containerPort: 8080 
+          
+          # CONTAINER-LEVEL SECURITY CONTEXT
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]   # Drop all Linux capabilities (ping, net_bind_service, etc.)
+
+          # REQUIRED FOR READ-ONLY FILESYSTEM
+          # NGINX must write to these locations to function:
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+            - name: run-volume
+              mountPath: /var/run
+            - name: cache-volume
+              mountPath: /var/cache/nginx
+
+      # VOLUMES FOR THE WRITABLE PATHS
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+        - name: run-volume
+          emptyDir: {}
+        - name: cache-volume
+          emptyDir: {}
