@@ -10,21 +10,22 @@ terraform {
 provider "aws" {
   # Configuration options
   region = "us-east-1" 
+  profile = "Engineer2-221433242586"
 }
 
 
 # EC2 Instance with Embedded Cloud-Init Script
 resource "aws_instance" "k3s_node" {
-  ami           = "ami-05320f7bf2322b015" # Base us-east-1 x86 Ubuntu 24.04 -- to be updated with hardened image
+  ami           = "ami-0a11d8be7d69b2658" # us-east-1 hardened image - based on AWS Linux
   instance_type = "t3.small"
-  key_name      = "sa_pov"            # Replace with your actual key name
-  
-  vpc_security_group_ids = ["sg-eeb4998b","sg-0428dec645bc50eb5"] #replace with actual VPC
+  key_name      = "zl-veracode"            # Replace with your actual key name
+  subnet_id     = "subnet-a0756988"
+  vpc_security_group_ids = ["sg-eeb4998b","sg-024c9979b7d507b06"] #replace with actual SG IDs
 
   #root device configuration:
   root_block_device {
     volume_type = "gp3"
-    volume_size = 8
+    volume_size = 30
     delete_on_termination = true
     encrypted = true
   }
@@ -40,8 +41,10 @@ resource "aws_instance" "k3s_node" {
               yum update -y
               yum upgrade -y
 
+              yum install git -y
+
               # Install K3s (Single node cluster)
-              curl -sfL https://get.k3s.io | sh -
+              curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_SELINUX_RPM=true sh -
               
               #Install helm (For the helm-cli to be used for runtime agent install) 
               curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
