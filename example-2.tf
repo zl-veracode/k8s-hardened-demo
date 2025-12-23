@@ -12,10 +12,15 @@ provider "aws" {
   region = "us-east-1" 
 }
 
+variable "ami_id" {
+  description = "The AMI ID for the VC hardened linux image"
+  type        = string
+  default     = "ami-05320f7bf2322b015" # Based on amazon linux image
+}
 
 # EC2 Instance with Embedded Cloud-Init Script
 resource "aws_instance" "k3s_node" {
-  ami           = "ami-0ecb62995f68bb549" # Base us-east-1 x86 Ubuntu 24.04 -- to be updated with hardened image
+  ami           = var.ami_id
   instance_type = "t3.small"
   key_name      = "zl-veracode"            # Replace with your actual key name
   
